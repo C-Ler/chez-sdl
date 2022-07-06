@@ -49,6 +49,17 @@
     (ftype-set! SDL_Point (y) fptr (sdl-point-y point))
     fptr))
 
+(define (sdl-color->ftype color)
+  (let*
+      ((size (ftype-sizeof SDL_Color))
+       (addr (foreign-alloc size))
+       (fptr (make-ftype-pointer SDL_Color addr)))
+    (ftype-set! SDL_Color (r) fptr (sdl-color-r color))
+    (ftype-set! SDL_Color (g) fptr (sdl-color-g color))
+    (ftype-set! SDL_Color (b) fptr (sdl-color-b color))
+    (ftype-set! SDL_Color (a) fptr (sdl-color-a color))
+    fptr))
+
 (define (ftype->sdl-point point)
   (error 'SDL-HELPER "Unimplemented" ftype->sdl-point))
 
