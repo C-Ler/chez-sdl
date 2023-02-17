@@ -1,7 +1,9 @@
 ;;;; -*- mode: Scheme; -*-
 
 (define-record-type sdl-rect
-  (fields x y w h))
+  ;; Rect and FRect use same scheme rect rcd.
+  (fields (mutable x) (mutable y) w h)		;修改 变成可以修改的槽 -- 230126
+  )
 
 (define-record-type sdl-point
   (fields x y))
@@ -16,8 +18,6 @@
 	  max-texture-width
 	  max-texture-height))
 
-
-
 (define (sdl-rect->ftype rect)
   (let*
       ((size (ftype-sizeof SDL_Rect))
@@ -28,6 +28,18 @@
     (ftype-set! SDL_Rect (w) fptr (sdl-rect-w rect))
     (ftype-set! SDL_Rect (h) fptr (sdl-rect-h rect))
     fptr))
+
+(define (sdl-frect->ftype frect)
+  (let*
+      ((size (ftype-sizeof SDL_FRect))
+       (addr (foreign-alloc size))
+       (fptr (make-ftype-pointer SDL_FRect addr)))
+    (ftype-set! SDL_FRect (x) fptr (sdl-rect-x frect))
+    (ftype-set! SDL_FRect (y) fptr (sdl-rect-y frect))
+    (ftype-set! SDL_FRect (w) fptr (sdl-rect-w frect))
+    (ftype-set! SDL_FRect (h) fptr (sdl-rect-h frect))
+    fptr))
+
 
 (define (ftype->sdl-rect rect)
   (if (ftype-pointer-null? rect)
@@ -49,11 +61,21 @@
     (ftype-set! SDL_Point (y) fptr (sdl-point-y point))
     fptr))
 
+(define (sdl-fpoint->ftype fpoint)
+  (let*
+      ((size (ftype-sizeof SDL_FPoint))
+       (addr (foreign-alloc size))
+       (fptr (make-ftype-pointer SDL_FPoint addr)))
+    (ftype-set! SDL_FPoint (x) fptr (sdl-point-x fpoint))
+    (ftype-set! SDL_FPoint (y) fptr (sdl-point-y fpoint))
+    fptr))
+
 (define (sdl-color->ftype color)
   (let*
       ((size (ftype-sizeof SDL_Color))
        (addr (foreign-alloc size))
        (fptr (make-ftype-pointer SDL_Color addr)))
+    ;; SDL_Color的四个槽都是 unsigned int 类型 0~255, int的 -1 会变成 255...补码很大
     (ftype-set! SDL_Color (r) fptr (sdl-color-r color))
     (ftype-set! SDL_Color (g) fptr (sdl-color-g color))
     (ftype-set! SDL_Color (b) fptr (sdl-color-b color))
@@ -76,7 +98,7 @@
 		(loop (+ index 1)))))
     (loop 0))
 
-  (define (read-string name)
+ (define (read-string name)
     (define (loop index)
       (let ((letter (ftype-ref char () name index)))
 	(if (char=? letter #\nul)
@@ -306,6 +328,26 @@
     (foreign-free (ftype-pointer-address b))
     return))
 
+(define (sdl-query-texture texture)
+  ;; 这种接受四个指针,修改指针指向内存的内容,只用返回值作为成功标识的过程的封装方法,同上面那个sdl-get-texture-color-mod一样
+  ;; 应该是夏天时候手撸的,而且和SDL本来的作用并不一样,并不是返回0或-1这么简单 -- 20221217
+  (let* ((format (make-ftype-pointer unsigned-32 (foreign-alloc (ftype-sizeof unsigned-32))))
+	 (access (make-ftype-pointer int (foreign-alloc (ftype-sizeof int))))
+	 (w (make-ftype-pointer int (foreign-alloc (ftype-sizeof int))))
+	 (h (make-ftype-pointer int (foreign-alloc (ftype-sizeof int))))
+	 (return (if (= 0 (SDL_QueryTexture texture format access w h))
+		     (list (ftype-ref unsigned-32 () format)
+			   (ftype-ref int () access)
+			   (ftype-ref int () w)
+			   (ftype-ref int () h))
+		     '())))
+    (foreign-free (ftype-pointer-address format))
+    (foreign-free (ftype-pointer-address access))
+    (foreign-free (ftype-pointer-address w))
+    (foreign-free (ftype-pointer-address h))
+    return
+    ))
+
 (define sdl-render-clear SDL_RenderClear)
 
 (define (sdl-render-copy renderer texture src-rect dst-rect)
@@ -340,6 +382,28 @@
     (if (sdl-rect? dst-rect)      (foreign-free (ftype-pointer-address dst)))
     (if (sdl-point? center-point) (foreign-free (ftype-pointer-address center)))
     return))
+
+(define (sdl-render-copy-exf renderer texture src-frect dst-frect angle center-fpoint FLIP)
+  (let* ((src    (if (sdl-rect? src-frect)
+		     (sdl-frect->ftype src-frect)
+		     (make-ftype-pointer SDL_FRect 0)))
+	 (dst    (if (sdl-rect? dst-frect)
+		     (sdl-frect->ftype dst-frect)
+		     (make-ftype-pointer SDL_FRect 0)))
+	 (center (if (sdl-point? center-fpoint)
+		     (sdl-fpoint->ftype center-fpoint)
+		     (make-ftype-pointer SDL_FPoint 0)))
+	 (return (SDL_RenderCopyExF renderer
+				    texture
+				    src dst
+				    angle
+				    center
+				    FLIP)))
+    (if (sdl-rect? src-frect)      (foreign-free (ftype-pointer-address src)))
+    (if (sdl-rect? dst-frect)      (foreign-free (ftype-pointer-address dst)))
+    (if (sdl-point? center-fpoint) (foreign-free (ftype-pointer-address center)))
+    return))
+
 
 (define sdl-render-draw-line SDL_RenderDrawLine)
 
@@ -519,7 +583,8 @@
 
 (define sdl-free-format SDL_FreeFormat)
 (define sdl-free-palette SDL_FreePalette)
-(define sdl-get-pixel-format-name SDL_GetPixelFormatName)
+(define (sdl-get-pixel-format-name format)
+  (SDL_GetPixelFormatName format)) ;以人类可读形式将pixelformat转化为SDL定义的常量--20221127
 
 (define (sdl-get-rgb pixel format)
   (let* ((r      (make-ftype-pointer unsigned-8 (foreign-alloc (ftype-sizeof unsigned-8))))
@@ -615,6 +680,14 @@
 (define (sdl-rect-intersection? rect-a rect-b)
   (error 'SDL "Unimplemented" sdl-rect-intersection?))
 
+(define (sdl-has-intersection? rect-a rect-b)
+  (let* ((rect-a-ptr (sdl-rect->ftype rect-a))
+	 (rect-b-ptr (sdl-rect->ftype rect-a))
+	 (res (SDL_HasIntersection rect-a-ptr rect-b-ptr)))
+    (foreign-free (ftype-pointer-address rect-a-ptr))
+    (foreign-free (ftype-pointer-address rect-b-ptr))
+    res))
+
 (define (sdl-rect-intersect rect-a rect-b)
   (error 'SDL "Unimplemented" sdl-rect-intersect))
 
@@ -670,8 +743,16 @@
     (foreign-free (ftype-pointer-address fsrc-rect))
     (foreign-free (ftype-pointer-address fdst-rect))))
 
-(define sdl-convert-surface                SDL_ConvertSurface)
-(define sdl-convert-surface-format         SDL_ConvertSurfaceFormat)
+(define (sdl-convert-surface surface-src surface-pixelforamt-aim flag-u32)
+  ;; 还有一个第三参数flags,用来兼容sdl1.2的,
+  (SDL_ConvertSurface surface-src surface-pixelforamt-aim flag-u32)
+  ;; (SDL_ConvertSurface surface-src surface-pixelforamt-aim 0) ;用0直接缺省一个参数不行,会报 SDL_ConvertSurface 参数数量不对
+  ;; (let* ((aimsurfaceptr (make-ftype-pointer SDL_Surface (foreign-alloc (ftype-sizeof SDL_Surface)))))) ;ftype-set!只能按槽诸个赋值,得换个办法,比如使用sdl-memcpy什么的
+  ) 
+
+(define (sdl-convert-surface-format surface-src format-u32 flag-u32)
+  ;; 类似上面,更方便使用,不过没有对pallet做变换
+  (SDL_ConvertSurfaceFormat surface-src format-u32 flag-u32))
 (define sdl-create-rgb-surface             SDL_CreateRGBSurface)
 (define bytevector->sdl-surface            SDL_CreateRGBSurfaceFrom) ;; SDL_CreateRGBSurfaceWithFormatFrom
 (define sdl-create-rgb-surface-with-format SDL_CreateRGBSurfaceWithFormat)
@@ -774,13 +855,12 @@
     (if (sdl-rect? rect) (foreign-free (ftype-pointer-address clip)))
     return))
 
-(define sdl-set-color-key!  SDL_SetColorKey)
+(define sdl-set-color-key!  SDL_SetColorKey) ;这个封装等于没有封装,在一般情况下的使用,会需要调用 ftype-ref ,打开surfac的黑盒 --220730
 (define sdl-set-alpha-mod!  SDL_SetSurfaceAlphaMod)
 (define sdl-set-blend-mode! SDL_SetSurfaceBlendMode)
 (define sdl-set-color-mod!  SDL_SetSurfaceColorMod)
 (define sdl-set-palette!    SDL_SetSurfacePalette)
 (define sdl-set-rle!        SDL_SetSurfaceRLE)
-
 
 
 #| Clipboard Handling
@@ -791,3 +871,15 @@
 (define sdl-get-clipboard-text         SDL_GetClipboardText)
 (define (sdl-has-clipboard-text?)      (= 1 (SDL_HasClipboardText)))
 (define (sdl-set-clipboard-text! text) (= 1 (SDL_SetClipboardText text)))
+
+
+;;; extend for daily use
+
+
+
+(define (sdl-get-rect-from-surface surface x y)
+  (make-sdl-rect x y
+		 (ftype-ref SDL_Surface (w) surface)
+		 (ftype-ref SDL_Surface (h) surface)))
+
+(define 提取图层规格矩形 sdl-get-rect-from-surface)

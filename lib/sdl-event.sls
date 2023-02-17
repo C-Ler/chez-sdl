@@ -405,17 +405,26 @@
 		 (ftype-&ref SDL_Event (motion) *event-obj*))
       '()))
 
+;; (define (sdl-event-mouse-motion-x)
+;;   ;; 搞不懂为什么一定要限制在必须移动鼠标的事件才能获取位置 --220726
+;;   (if (sdl-event-mouse-motion?)
+;;       (ftype-ref SDL_MouseMotionEvent (x)
+;; 		 (ftype-&ref SDL_Event (motion) *event-obj*))
+;;       '()))
+
+;; (define (sdl-event-mouse-motion-y)
+;;   (if (sdl-event-mouse-motion?)
+;;       (ftype-ref SDL_MouseMotionEvent (y)
+;; 		 (ftype-&ref SDL_Event (motion) *event-obj*))
+;;       '()))
+
 (define (sdl-event-mouse-motion-x)
-  (if (sdl-event-mouse-motion?)
-      (ftype-ref SDL_MouseMotionEvent (x)
-		 (ftype-&ref SDL_Event (motion) *event-obj*))
-      '()))
+  (ftype-ref SDL_MouseMotionEvent (x)
+	     (ftype-&ref SDL_Event (motion) *event-obj*)))
 
 (define (sdl-event-mouse-motion-y)
-  (if (sdl-event-mouse-motion?)
-      (ftype-ref SDL_MouseMotionEvent (y)
-		 (ftype-&ref SDL_Event (motion) *event-obj*))
-      '()))
+  (ftype-ref SDL_MouseMotionEvent (y)
+	     (ftype-&ref SDL_Event (motion) *event-obj*)))
 
 (define (sdl-event-mouse-motion-x-rel)
   (if (sdl-event-mouse-motion?)
@@ -878,3 +887,8 @@
 	  (sdl-event-drop-text?))
       (read-all)
       '()))
+
+;;; extend
+;;; 因为分开放会报异常 Exception: invalid context for definition (define (事件-mk 每帧时长 默认事件过程) (lambda (msg) (case msg (...) (...)))) at line 9, char 1 of D:\lib/chez-sdl/lib/sdl-extend.sls -- 230125
+;;; 合并到一个文件后依然是一样的异常.... -- 230125
+;;; set! 不能放在 lib 的开头...
