@@ -1,5 +1,6 @@
 ;;;; -*- mode: Scheme; -*-
-
+;;; line 987 values 导出结果
+;;; line 1852 extend
 (library (chez-sdl lib sdl)
   (export make-sdl-rect
 	  sdl-rect?
@@ -110,6 +111,7 @@
 	  sdl-get-texture-alpha-mod
 	  sdl-get-texture-blend-mode
 	  sdl-get-texture-color-mod
+	  sdl-query-texture
 	  sdl-render-clear
 	  sdl-render-copy
 	  sdl-render-copy-ex
@@ -170,6 +172,8 @@
 	  sdl-set-color-mod!
 	  sdl-set-palette!
 	  sdl-set-rle!
+
+	  sdl-has-intersection?
 
 	  sdl-get-clipboard-text
 	  sdl-has-clipboard-text?
@@ -419,8 +423,13 @@
 
 	  sdl-free-rw
 
+	  sdl-get-rect-from-surface
+	  sdl-get-pixel-format-name
+	  提取图层规格矩形
+
 	  SDL-TRUE
 	  SDL-FALSE
+
 
 	  SDL-QUERY
 	  SDL-IGNORE
@@ -974,7 +983,22 @@
 	  KMOD-CTRL
 	  KMOD-SHIFT
 	  KMOD-ALT
-	  KMOD-GUI)
+	  KMOD-GUI
+
+	  ;; values导出
+	  ;; 由于想通了,可以直接调用原作者的谓词,不需要直接访问values了 -- 2023年2月16日22:17:09
+	  	  
+	  ;; extend
+	  事件-mk
+	  事件循环
+	  事件过程-get
+	  evnht
+	  事件循环2
+	  事件循环3
+	  
+	  sdl-rect-x-set!
+	  sdl-rect-y-set!
+	  )
 
   (import (chezscheme)
 	  (chez-sdl lib sdl ftype))
@@ -987,4 +1011,5 @@
   (include "sdl-force.sls")
   (include "sdl-power.sls")
   (include "sdl-timer.sls")
-  (include "sdl-input.sls"))
+  (include "sdl-input.sls")
+  (include "sdl-extend.sls"))
