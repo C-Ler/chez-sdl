@@ -10,8 +10,8 @@
       (set! *sdl-event-none?* #t)
       (set! *sdl-event-none?* #f)))
 
-(define (sdl-button x)     (bitwise-arithmetic-shift-right 1 (- x 1)))
-(define sdl-button-left    1)
+(define (sdl-button x)     (bitwise-arithmetic-shift-left  1 (- x 1))) ; macro in sdl wiki,move 1 left x-1 bit to get mask 原作者可能喝高了;
+(define sdl-button-left    1)		;#defines in SDL_mouse.h 
 (define sdl-button-middle  2)
 (define sdl-button-right   3)
 (define sdl-button-x1      4)
@@ -78,8 +78,14 @@
      (ftype-ref SDL_Event (type) *event-obj*)))
 
 (define (sdl-event-keydown?)
+
   (= SDL-KEYDOWN-E
      (ftype-ref SDL_Event (type) *event-obj*)))
+
+(define (sdl-get-keydown)
+  (ftype-ref SDL_Keysym (sym)
+	     (ftype-&ref SDL_KeyboardEvent (keysym)
+			 (ftype-&ref SDL_Event (key) *event-obj*))))
 
 (define (sdl-event-text-editing?)
   (= SDL-TEXTEDITING-E
@@ -394,10 +400,21 @@
 
       (if (char=? c #\nul)
 	  '()
-	  (cons c (loop (+ x 1))))))
+	  (cons c (loop (+ x 1))))))	;相较于thunder,没有读入字符的限制,也没有把最后的list转为string,直接返回了. -- 2023年2月19日20:24:02
   (if (sdl-event-text-input?)
       (loop 0)
       '()))
+
+(define (sdl-event-text-input-text2 n)
+  (define (loop x)
+    (let ((c (ftype-ref char ()
+			(ftype-&ref SDL_TextInputEvent (text)
+				    (ftype-&ref SDL_Event (text) *event-obj*)) x)))
+
+      (if (= x n)
+	  '()
+	  (cons c (loop (+ x 1))))))	;相较于thunder,没有读入字符的限制,也没有把最后的list转为string,直接返回了. -- 2023年2月19日20:24:02
+  (loop 0))
 
 (define (sdl-event-mouse-motion-which)
   (if (sdl-event-mouse-motion?)
@@ -489,35 +506,35 @@
 	  sdl-event-mouse-button-down?)
       (let
 	  ((b (ftype-ref SDL_MouseButtonEvent (button)
-			 (ftype-&ref SDL_Event (motion) *event-obj*))))
-	(cond
-	 ((bitwise-and b sdl-button-l-mask)  'SDL-BUTTON-LEFT)
-	 ((bitwise-and b sdl-button-m-mask)  'SDL-BUTTON-MIDDLE)
-	 ((bitwise-and b sdl-button-r-mask)  'SDL-BUTTON-RIGHT)
-	 ((bitwise-and b sdl-button-x1-mask) 'SDL-BUTTON-X1)
-	 ((bitwise-and b sdl-button-x2-mask) 'SDL-BUTTON-X2)
-	 (else '())))
-      '()))
+			 (ftype-&ref SDL_Event (button) *event-obj*))))	;原作者把这里的button搞成了motion
+	(case b				;如果使用了mask,应该可以返回31种结果
+	  ((1) 'SDL-BUTTON-LEFT)
+	  ((2) 'SDL-BUTTON-MIDDLE)
+	  ((3) 'SDL-BUTTON-RIGHT)
+	  ((4) 'SDL-BUTTON-X1)
+	  ((5) 'SDL-BUTTON-X2)
+	  (else #f)))
+      #f))
 
 (define (sdl-event-mouse-button-clicks)
   (if (or sdl-event-mouse-button-up?
 	  sdl-event-mouse-button-down?)
       (ftype-ref SDL_MouseButtonEvent (clicks)
-		 (ftype-&ref SDL_Event (motion) *event-obj*))
+		 (ftype-&ref SDL_Event (button) *event-obj*))
       '()))
 
 (define (sdl-event-mouse-button-x)
   (if (or sdl-event-mouse-button-up?
 	  sdl-event-mouse-button-down?)
       (ftype-ref SDL_MouseButtonEvent (x)
-		 (ftype-&ref SDL_Event (motion) *event-obj*))
+		 (ftype-&ref SDL_Event (button) *event-obj*))
       '()))
 
 (define (sdl-event-mouse-button-y)
   (if (or sdl-event-mouse-button-up?
 	  sdl-event-mouse-button-down?)
       (ftype-ref SDL_MouseButtonEvent (y)
-		 (ftype-&ref SDL_Event (motion) *event-obj*))
+		 (ftype-&ref SDL_Event (button) *event-obj*))
       '()))
 
 (define (sdl-event-mouse-wheel-which)

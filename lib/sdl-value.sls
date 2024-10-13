@@ -618,10 +618,10 @@
 (define (SDL-SCANCODE-TO-KEYCODE X) (bitwise-ior X SDLK-SCANCODE-MASK))
 
 (define SDLK-UNKNOWN 0)
-(define SDLK-RETURN       (char->integer #\r))
+(define SDLK-RETURN       (char->integer #\return))
 (define SDLK-ESCAPE       (char->integer #\esc))
-(define SDLK-BACKSPACE    (char->integer #\b))
-(define SDLK-TAB          (char->integer #\t))
+(define SDLK-BACKSPACE    (char->integer #\backspace))
+(define SDLK-TAB          (char->integer #\tab))
 (define SDLK-SPACE        (char->integer #\space))
 (define SDLK-EXCLAIM      (char->integer #\!))
 (define SDLK-QUOTEDBL     (char->integer #\"))
