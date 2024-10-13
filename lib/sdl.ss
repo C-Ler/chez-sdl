@@ -1,6 +1,4 @@
 ;;;; -*- mode: Scheme; -*-
-;;; line 987 values 导出结果
-;;; line 1852 extend
 (library (chez-sdl lib sdl)
   (export make-sdl-rect
 	  sdl-rect?
@@ -173,6 +171,11 @@
 	  sdl-set-palette!
 	  sdl-set-rle!
 
+	  sdl-get-rgb
+	  sdl-get-rgba
+	  sdl-pixel-format->masks
+	  sdl-set-palette-colors!
+
 	  sdl-has-intersection?
 
 	  sdl-get-clipboard-text
@@ -316,6 +319,8 @@
 	  sdl-event-text-input?
 	  sdl-event-text-editing-text
 	  sdl-event-text-input-text
+	  sdl-event-text-input-text2
+	  sdl-get-keydown
 
 	  sdl-event-mouse-motion?
 	  sdl-event-mouse-button-down?
@@ -345,6 +350,12 @@
 	  sdl-event-mouse-wheel-x
 	  sdl-event-mouse-wheel-y
 
+	  sdl-mouse-button-left-click?
+	  sdl-mouse-button-right-click?
+	  sdl-mouse-button-middle-click?
+	  sdl-mouse-button-x1-click?
+	  sdl-mouse-button-x2-click?
+	  
 	  sdl-event-joy-dev-added?
 	  sdl-event-joy-dev-removed?
 	  sdl-event-joy-device
@@ -985,17 +996,321 @@
 	  KMOD-ALT
 	  KMOD-GUI
 
-	  ;; values导出
 	  ;; 由于想通了,可以直接调用原作者的谓词,不需要直接访问values了 -- 2023年2月16日22:17:09
-	  	  
+
+	  
+	  ;; 嫁接thunder后,没有直接引用ftype.sls了,其中很多flag被隐藏了,从这里留一个出口  2023年3月1日19:42:02
+	  SDL_BLENDMODE_BLEND
+	  SDL_FLIP_VERTICAL
+	  SDL_FLIP_NONE
+	  SDL_FLIP_HORIZONTAL
+	  
+	  ;; ftypes
+	  SDL_Surface
+	  SDL_PixelFormat
+	  SDL_Texture
+	  SDL_Renderer
+
+	  ;; thunder
+	  sdl-library-init
+	  sdl-free-garbage
+	  sdl-guardian
+	  
 	  ;; extend
 	  sdl-rect-x-set!
 	  sdl-rect-y-set!
+	  define-sdl-func
+
+	  ;; image  需要通过code-parse自动生成  2023年3月1日22:52:50
+	  sdl-image-library-init
+	  img-linked-version
+	  img-init
+	  img-quit
+	  img-load-typed-rw
+	  img-load
+	  img-load-rw
+	  img-load-texture
+	  img-load-texture-rw
+	  img-load-texture-typed-rw
+	  ;; 下面这部分可以进一步抽象来精简
+	  img-is-ico
+	  img-is-cur
+	  img-is-bmp
+	  img-is-gif
+	  img-is-jpg
+	  img-is-lbm
+	  img-is-pcx
+	  img-is-png
+	  img-is-pnm
+	  img-is-tif
+	  img-is-xcf
+	  img-is-xpm
+	  img-is-xv
+	  img-is-webp
+	  img-load-ico-rw
+	  img-load-cur-rw
+	  img-load-bmp-rw
+	  img-load-gif-rw
+	  img-load-jpg-rw
+	  img-load-lbm-rw
+	  img-load-pcx-rw
+	  img-load-png-rw
+	  img-load-pnm-rw
+	  img-load-tga-rw
+	  img-load-tif-rw
+	  img-load-xcf-rw
+	  img-load-xpm-rw
+	  img-load-xv-rw
+	  img-load-webp-rw
+	  
+	  img-read-xpm-from-array
+	  img-save-png
+	  img-save-png-rw
+	  
+	  ;; image const
+	  IMG_INIT_JPG 
+	  IMG_INIT_PNG 
+	  IMG_INIT_TIF 
+	  IMG_INIT_EVERYTHING	
+	  IMG_MAJOR_VERSION
+	  IMG_MINOR_VERSION
+	  IMG_PATCHLEVEL
+
+	  ;; ttf
+	  
+	  ttf-linked-version
+	  ttf-byte-swapped-unicode
+	  ttf-init
+	  ttf-open-font
+	  ttf-open-font-index
+	  ttf-open-font-rw
+	  ttf-open-font-index-rw
+	  ttf-get-font-style
+	  ttf-set-font-style
+	  ttf-get-font-outline
+	  ttf-set-font-outline
+	  ttf-get-font-hinting
+	  ttf-set-font-hinting
+	  ttf-font-height
+	  ttf-font-ascent
+	  ttf-font-descent
+	  ttf-font-line-skip
+	  ttf-get-font-kerning
+	  ttf-set-font-kerning
+	  ttf-font-faces
+	  ttf-font-face-is-fixed-width
+	  ttf-font-face-family-name
+	  ttf-font-face-style-name
+	  ttf-glyph-is-provided
+	  ttf-glyph-metrics
+	  ttf-size-text-m
+	  ttf-size-text
+	  ttf-size-utf8
+	  ttf-size-unicode
+	  ttf-render-text-solid
+	  ttf-render-utf8-solid
+	  ttf-render-unicode-solid
+	  ttf-render-glyph-solid
+	  ttf-render-text-shaded
+	  ttf-render-utf8-shaded
+	  ttf-render-unicode-shaded
+	  ttf-render-glyph-shaded
+	  ttf-render-text-blended
+	  ttf-render-utf8-blended
+	  ttf-render-unicode-blended
+	  ttf-render-text-blended-wrapped
+	  ttf-render-utf8-blended-wrapped
+	  ttf-render-unicode-blended-wrapped
+	  ttf-render-glyph-blended
+	  ttf-close-font
+	  ttf-quit
+	  ttf-was-init
+	  ttf-get-font-kerning-size
+	  ttf-get-font-kerning-size-glyphs
+
+	  sdl-ttf-library-init
+	  ttf-render
+
+	  ;; mix
+	  MIX_INIT_FLAC
+	  MIX_INIT_MOD
+	  MIX_INIT_MP3
+	  MIX_INIT_OGG
+	  MIX_INIT_MID
+	  MIX_INIT_OPUS
+	  AUDIO_U8
+	  AUDIO_S8
+	  AUDIO_U16LSB
+	  AUDIO_S16LSB
+	  AUDIO_U16MSB
+	  AUDIO_S16MSB
+	  AUDIO_U16
+	  AUDIO_S16
+	  AUDIO_S32LSB
+	  AUDIO_S32MSB
+	  AUDIO_S32
+	  AUDIO_F32LSB
+	  AUDIO_F32MSB
+	  AUDIO_F32
+	  SDL_AUDIO_ALLOW_FREQUENCY_CHANGE
+	  SDL_AUDIO_ALLOW_FORMAT_CHANGE
+	  SDL_AUDIO_ALLOW_CHANNELS_CHANGE
+	  SDL_AUDIO_ALLOW_SAMPLES_CHANGE
+	  MIX_DEFAULT_FORMAT
+	  mix-linked-version
+	  mix-init
+	  mix-quit
+	  mix-open-audio
+	  mix-open-audio-device
+	  mix-allocate-channels
+	  mix-query-spec
+	  mix-load-wav-rw
+	  mix-load-mus
+	  mix-load-mus-rw
+	  mix-load-mus-type-rw
+	  mix-quick-load-wav
+	  mix-quick-load-raw
+	  mix-free-chunk
+	  mix-free-music
+	  mix-get-num-chunk-decoders
+	  mix-get-chunk-decoder
+	  mix-has-chunk-decoder
+	  mix-get-num-music-decoders
+	  mix-get-music-decoder
+	  mix-has-music-decoder
+	  mix-get-music-type
+	  mix-set-post-mix
+	  mix-hook-music
+	  mix-hook-music-finished
+	  mix-get-music-hook-data
+	  mix-channel-finished
+	  mix-register-effect
+	  mix-unregister-effect
+	  mix-unregister-all-effects
+	  mix-set-panning
+	  mix-set-position
+	  mix-set-distance
+	  mix-set-reverse-stereo
+	  mix-reserve-channels
+	  mix-group-channel
+	  mix-group-channels
+	  mix-group-available
+	  mix-group-count
+	  mix-group-oldest
+	  mix-group-newer
+	   ;; mix-play-channel C的macro,2.6以前的版本不要用这个,本质是mix-play-channel-timed
+	  mix-play-channel-timed
+	  mix-play-music
+	  mix-fade-in-music
+	  mix-fade-in-music-pos
+	  mix-fade-in-channel-timed
+	  mix-volume
+	  mix-volume-chunk
+	  mix-volume-music
+	  mix-halt-channel
+	  mix-halt-group
+	  mix-halt-music
+	  mix-expire-channel
+	  mix-fade-out-channel
+	  mix-fade-out-group
+	  mix-fade-out-music
+	  mix-fading-music
+	  mix-fading-channel
+	  mix-pause
+	  mix-resume
+	  mix-paused
+	  mix-pause-music
+	  mix-resume-music
+	  mix-rewind-music
+	  mix-paused-music
+	  mix-set-music-position
+	  mix-playing
+	  mix-playing-music
+	  mix-set-music-cmd
+	  mix-set-synchro-value
+	  mix-get-synchro-value
+	  mix-set-sound-fonts
+	  mix-get-sound-fonts
+	  mix-each-sound-font
+	  mix-get-chunk
+	  mix-close-audio
+
+	  sdl-mix-library-init
+	  mix-load-wav
+
+	  ;; net
+	  sdl-net-linked-version
+	  sdl-net-init
+	  sdl-net-quit
+	  sdl-net-resolve-host
+	  sdl-net-resolve-ip
+	  sdl-net-get-local-addresses
+	  sdl-net-tcp-open
+	  sdl-net-tcp-accept
+	  sdl-net-tcp-get-peer-address
+	  sdl-net-tcp-send
+	  sdl-net-tcp-recv
+	  sdl-net-tcp-close
+	  sdl-net-alloc-packet
+	  sdl-net-resize-packet
+	  sdl-net-free-packet
+	  sdl-net-alloc-packetv
+	  sdl-net-free-packetv
+	  sdl-net-udp-open
+	  sdl-net-udp-set-packet-loss
+	  sdl-net-udp-bind
+	  sdl-net-udp-unbind
+	  sdl-net-udp-get-peer-address
+	  sdl-net-udp-sendv
+	  sdl-net-udp-send
+	  sdl-net-udp-recvv
+	  sdl-net-udp-recv
+	  sdl-net-udp-close
+	  sdl-net-alloc-socket-set
+	  sdl-net-add-socket
+	  sdl-net-tcp-add-socket
+	  sdl-net-udp-add-socket
+	  sdl-net-del-socket
+	  sdl-net-tcp-del-socket
+	  sdl-net-udp-del-socket
+	  sdl-net-check-sockets
+	  sdl-net-free-socket-set
+	  sdl-net-set-error
+	  sdl-net-get-error
+
+	  sdl-net-library-init
+
+	  ;;
+	  sdl-render-copy-exf
+	  sdl-map-rgb
+	  sdl-map-rgba
+	  SDL_PIXELFORMAT_RGBA32
+	  SDL_Window
+	  SDL_Surface
+	  SDL_Renderer
 	  )
 
-  (import (chezscheme)
-	  (chez-sdl lib sdl ftype))
+  ;; 下述import同thunder sdl2 一样
+  (import (chezscheme) 
+	  (ffi-utils)
+	  (only (srfi s1 lists) fold)
+	  (only (thunder-utils) string-replace string-split)
+	  ;; ;这个13不知道和别的又有什么不同,总会报错  2023年2月21日21:35:39
+	  ;; 与only无关,s14也使用了同一个报错的过程,而且同构.  2023年2月21日21:38:35
+	  ;; 可能与文件中的这个有关系,不知道是什么东西.  2023年2月21日21:44:42
+	  ;; 打水归来,把s14搞坏对比,发现s14多"D:\\lib\\thunderchez-trunk"这个路径,而s13没有
+	  ;; include/resolve 这个srfi private include 的syntax,只有一处引用了一个(search-paths)的过程,chezscheme下这个过程对应(map car (library-directories))
+	  ;; 但是不应该出现s14返回的路径多,s13就少了的问题  2023年2月21日23:19:21
+	  (only (srfi s13 strings) string-delete string-suffix? string-prefix?)	
+	  (srfi s14 char-sets))
 
+  ;; 这个include的顺序十分重要,不然会报错:试图引用未关联的标识符sdl-  2023年2月22日21:09:07
+  (include "sdl/ffi.ss")
+  (include "sdl/base-types.ss")
+  (include "sdl/guardian.ss")
+  
+  (include "sdl/ftype.sls")
+  
   (include "sdl-value.sls")
   (include "sdl-basic.sls")
   (include "sdl-video.sls")
@@ -1005,4 +1320,23 @@
   (include "sdl-power.sls")
   (include "sdl-timer.sls")
   (include "sdl-input.sls")
-  (include "sdl-extend.sls"))
+
+  
+  (include "sdl/init.ss")
+
+  (include "sdl/extras.ss")
+
+  (include "sdl/image-ftype.ss")
+  (include "image.sls")
+  
+  (include "sdl/ttf-ftype.ss")
+  (include "ttf.sls")
+
+  (include "sdl/mix-ftype.ss")
+  (include "mix.sls")
+
+  
+  (include "sdl/net-ftype.ss")
+  (include "net.sls")
+  
+  )
