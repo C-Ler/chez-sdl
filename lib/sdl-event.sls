@@ -78,7 +78,6 @@
      (ftype-ref SDL_Event (type) *event-obj*)))
 
 (define (sdl-event-keydown?)
-
   (= SDL-KEYDOWN-E
      (ftype-ref SDL_Event (type) *event-obj*)))
 
@@ -525,35 +524,56 @@
   (or (sdl-event-mouse-button-up?)
       (sdl-event-mouse-button-down?)))
 
+(define (sdl-mouse-single-click?)
+  (and (sdl-event-mouse-button-down?)
+       (= 1 (sdl-event-mouse-button-clicks))))
+
 (define (get-sdl-mouse-button-up-or-down-value func default-value)
   (get-sdl-event-value-in-cond sdl-mouse-button-up-or-down? func default-value))
+
+(define (get-sdl-mouse-single-click-value func default-value)
+  (get-sdl-event-value-in-cond sdl-mouse-single-click? func default-value))
+
+(define (get-sdl-mouse-button-up-value func default-value)
+  (get-sdl-event-value-in-cond sdl-event-mouse-button-up? func default-value))
   
 (define (get-sdl-event-mouse-button-button)
   (ftype-ref SDL_MouseButtonEvent (button)
 	     (ftype-&ref SDL_Event (button) *event-obj*))	;原作者把这里的button搞成了motion
   )
 
+(define (get-sdl-mouse-button-up-or-down-button)
+  (get-sdl-mouse-button-up-or-down-value get-sdl-event-mouse-button-button 0))
+
+(define (get-sdl-mouse-single-click-button)
+  (get-sdl-mouse-single-click-value get-sdl-event-mouse-button-button 0))
+
+(define (get-sdl-mouse-button-up-button)
+  (get-sdl-mouse-single-click-value get-sdl-event-mouse-button-button 0))
+
 (define (sdl-mouse-button-left-click?)
-  (= sdl-button-left (get-sdl-event-mouse-button-button)))
+  (and (= sdl-button-left (get-sdl-event-mouse-button-button
+			   ))
+       (sdl-mouse-single-click?)))
 
 (define (sdl-mouse-button-right-click?)
-  (= sdl-button-right (get-sdl-event-mouse-button-button)))
+  (= sdl-button-right (get-sdl-mouse-button-up-or-down-button)))
 
 (define (sdl-mouse-button-middle-click?)
-  (= sdl-button-middle (get-sdl-event-mouse-button-button)))
+  (= sdl-button-middle (get-sdl-mouse-button-up-or-down-button)))
 
 (define (sdl-mouse-button-x1-click?)
-  (= sdl-button-x1 (get-sdl-event-mouse-button-button)))
+  (= sdl-button-x1 (get-sdl-mouse-button-up-or-down-button)))
 
 (define (sdl-mouse-button-x2-click?)
-  (= sdl-button-x2 (get-sdl-event-mouse-button-button)))
+  (= sdl-button-x2 (get-sdl-mouse-button-up-or-down-button)))
 
 (define (get-sdl-event-mouse-button-clicks)
   (ftype-ref SDL_MouseButtonEvent (clicks)
 	     (ftype-&ref SDL_Event (button) *event-obj*)))
 
 (define (sdl-event-mouse-button-clicks)
-  (get-sdl-mouse-button-up-or-down-value get-sdl-event-mouse-button-clicks '())
+  (get-sdl-mouse-button-up-or-down-value get-sdl-event-mouse-button-clicks 0)
   )
 
 (define (get-sdl-event-mouse-button-x)
